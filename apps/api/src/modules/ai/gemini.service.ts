@@ -22,7 +22,7 @@ export class GeminiService {
         this.genAI = new GoogleGenerativeAI(apiKey);
         // Use gemini-2.0-flash as per user feedback
         this.model = this.genAI.getGenerativeModel({
-            model: 'gemini-2.0-flash-exp',
+            model: 'gemini-2.0-flash',
             generationConfig: {
                 temperature: 0.7,
                 maxOutputTokens: 2048,
@@ -30,7 +30,7 @@ export class GeminiService {
             },
         });
 
-        this.logger.log('Gemini AI initialized with model: gemini-2.0-flash-exp');
+        this.logger.log('Gemini AI initialized with model: gemini-2.0-flash');
     }
 
     async generateAutoOptimizeSuggestions(
@@ -124,8 +124,16 @@ Return ONLY the JSON array, no additional text.`;
 
     private parseGeminiResponse(responseText: string): AutoOptimizeChangeDraft[] {
         try {
+            // Clean up markdown code blocks if present
+            let cleanText = responseText.trim();
+            if (cleanText.startsWith('```json')) {
+                cleanText = cleanText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+            } else if (cleanText.startsWith('```')) {
+                cleanText = cleanText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+            }
+
             // Try to parse directly as JSON
-            let parsed = JSON.parse(responseText);
+            let parsed = JSON.parse(cleanText);
 
             // Handle if response is wrapped in extra object
             if (parsed.changes) {
@@ -136,11 +144,11 @@ Return ONLY the JSON array, no additional text.`;
             if (!Array.isArray(parsed)) {
                 this.logger.warn('Gemini response is not an array, attempting to extract...');
                 // Try to find JSON array in text
-                const match = responseText.match(/\[[\s\S]*\]/);
+                const match = cleanText.match(/\[[\s\S]*\]/);
                 if (match) {
                     parsed = JSON.parse(match[0]);
                 } else {
-                    throw new Error('No JSON array found in response');
+                    throw new Error('Could not find JSON array in response');
                 }
             }
 
