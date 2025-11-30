@@ -7,7 +7,6 @@ import api from '@/lib/api';
 interface User {
     id: string;
     email: string;
-    name: string;
 }
 
 interface AuthContextType {

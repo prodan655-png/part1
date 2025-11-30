@@ -11,6 +11,8 @@ import { ContentAuditModule } from './modules/content-audit/content-audit.module
 import { SerpModule } from './modules/integrations/serp/serp.module';
 import { AutoOptimizeModule } from './modules/auto-optimize/auto-optimize.module';
 import { InternalLinkingModule } from './modules/internal-linking/internal-linking.module';
+import { CrawlerModule } from './modules/crawler/crawler.module';
+import { PagesModule } from './modules/pages/pages.module';
 
 @Module({
     imports: [
@@ -32,6 +34,8 @@ import { InternalLinkingModule } from './modules/internal-linking/internal-linki
         SerpModule,
         AutoOptimizeModule,
         InternalLinkingModule,
+        CrawlerModule,
+        PagesModule,
     ],
     providers: [
         // Global exception filter

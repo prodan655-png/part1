@@ -12,7 +12,7 @@ import {
     AutoOptimizePromptInput,
     ImportantTerm,
     ChangeStatus,
-} from '@seo-audit/shared';
+} from '../../common/shared';
 
 @Injectable()
 export class AutoOptimizeService {

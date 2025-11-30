@@ -6,11 +6,17 @@ import { ContentAuditController } from './content-audit.controller';
 import { ContentScoringService } from './services/content-scoring.service';
 import { SitesModule } from '../sites/sites.module';
 import { NlpModule } from '../nlp/nlp.module';
+import { GscModule } from '../gsc/gsc.module';
+import { CrawlerModule } from '../crawler/crawler.module';
+import { SerpModule } from '../integrations/serp/serp.module';
 
 @Module({
     imports: [
         SitesModule,
         NlpModule,
+        GscModule,
+        CrawlerModule,
+        SerpModule,
         BullModule.forRootAsync({
             imports: [ConfigModule],
             useFactory: async (configService: ConfigService) => ({

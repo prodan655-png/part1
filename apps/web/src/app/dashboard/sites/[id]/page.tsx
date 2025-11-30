@@ -1,16 +1,19 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Plus, BarChart2, FileText, Settings } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AuditProjectForm } from '@/components/audit/audit-project-form';
+import { PagesTable } from '@/components/pages/pages-table';
 
 export default function SiteDetailsPage() {
     const params = useParams();
     const siteId = params.id as string;
+    const queryClient = useQueryClient();
 
     const { data: site, isLoading } = useQuery({
         queryKey: ['site', siteId],
@@ -31,6 +34,46 @@ export default function SiteDetailsPage() {
             }
         },
     });
+
+    const { data: pages = [] } = useQuery({
+        queryKey: ['pages', siteId],
+        queryFn: async () => {
+            if (!auditProject) return [];
+            try {
+                const { data } = await api.get(`/sites/${siteId}/audit-project/pages`);
+                const pages = data.pages || [];
+                return pages.map((p: any) => ({
+                    ...p,
+                    impressions: p.impressions30d,
+                    clicks: p.clicks30d,
+                    ctr: p.ctr30d,
+                    position: p.avgPosition,
+                }));
+            } catch (e) {
+                return [];
+            }
+        },
+        enabled: !!auditProject,
+    });
+
+    const importPagesMutation = useMutation({
+        mutationFn: async () => {
+            return api.post(`/sites/${siteId}/audit-project/import`);
+        },
+        onSuccess: (data) => {
+            alert(`Successfully imported ${data.data.imported} new pages and updated ${data.data.updated} existing pages!`);
+            queryClient.invalidateQueries({ queryKey: ['pages', siteId] });
+        },
+        onError: (error: any) => {
+            alert(error.response?.data?.message || 'Failed to import pages. Make sure you have connected your Google account in Settings > Integrations.');
+        },
+    });
+
+    const handleImport = () => {
+        if (confirm('Import pages from Google Search Console? This may take a few moments.')) {
+            importPagesMutation.mutate();
+        }
+    };
 
     if (isLoading) return <div className="p-8">Loading...</div>;
 
@@ -60,9 +103,9 @@ export default function SiteDetailsPage() {
                         ) : (
                             <div>
                                 <div className="text-2xl font-bold text-gray-400">Not Configured</div>
-                                <Button size="sm" className="mt-2 w-full">
-                                    <Plus className="h-4 w-4 mr-2" /> Setup Audit
-                                </Button>
+                                <p className="text-xs text-muted-foreground mt-2 mb-4">
+                                    Configure audit settings to start analyzing pages.
+                                </p>
                             </div>
                         )}
                     </CardContent>
@@ -84,17 +127,25 @@ export default function SiteDetailsPage() {
                 </Card>
             </div>
 
-            {/* Pages Table Placeholder */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Pages</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground text-sm">
-                        Pages list will be implemented in the next step.
-                    </p>
-                </CardContent>
-            </Card>
+            {/* Audit Setup Form or Pages Table */}
+            {!auditProject ? (
+                <div className="max-w-2xl mx-auto">
+                    <AuditProjectForm siteId={siteId} />
+                </div>
+            ) : (
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-2xl font-bold">Pages</h2>
+                        <Button
+                            onClick={handleImport}
+                            disabled={importPagesMutation.isPending}
+                        >
+                            {importPagesMutation.isPending ? 'Importing...' : 'Import Pages from GSC'}
+                        </Button>
+                    </div>
+                    <PagesTable pages={pages} siteId={siteId} />
+                </div>
+            )}
         </div>
     );
 }

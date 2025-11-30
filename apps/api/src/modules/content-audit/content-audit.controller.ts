@@ -39,6 +39,15 @@ export class ContentAuditController {
         return this.auditService.listPages(user.id, siteId, query);
     }
 
+    @Get('pages/:pageId')
+    @ApiOperation({ summary: 'Get single page details' })
+    async getPage(
+        @CurrentUser() user: any,
+        @Param('pageId') pageId: string,
+    ) {
+        return this.auditService.getPage(user.id, pageId);
+    }
+
     @Post('import')
     @ApiOperation({ summary: 'Trigger GSC page import' })
     async importPages(@CurrentUser() user: any, @Param('siteId') siteId: string) {
@@ -50,5 +59,24 @@ export class ContentAuditController {
     @ApiOperation({ summary: 'Trigger page analysis refresh' })
     async refreshPage(@CurrentUser() user: any, @Param('pageId') pageId: string) {
         return this.auditService.refreshPageAnalysis(user.id, pageId);
+    }
+
+    @Post('pages/:pageId/content')
+    @ApiOperation({ summary: 'Update page content' })
+    async updateContent(
+        @CurrentUser() user: any,
+        @Param('pageId') pageId: string,
+        @Body() body: { content: string },
+    ) {
+        return this.auditService.updatePageContent(user.id, pageId, body.content);
+    }
+
+    @Post('pages/:pageId/serp-analysis')
+    @ApiOperation({ summary: 'Run SERP analysis for page' })
+    async runSerpAnalysis(
+        @CurrentUser() user: any,
+        @Param('pageId') pageId: string,
+    ) {
+        return this.auditService.runSerpAnalysis(user.id, pageId);
     }
 }

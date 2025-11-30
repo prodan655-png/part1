@@ -8,7 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { AuthTokens } from '@seo-audit/shared';
+import { AuthTokens } from '../../common/shared';
 
 @Injectable()
 export class AuthService {

@@ -13,9 +13,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 const registerSchema = z.object({
-    name: z.string().min(2, 'Name must be at least 2 characters'),
     email: z.string().email('Invalid email address'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 type RegisterForm = z.infer<typeof registerSchema>;
@@ -51,11 +50,7 @@ export default function RegisterPage() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Name</Label>
-                            <Input id="name" {...register('name')} />
-                            {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
-                        </div>
+
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
                             <Input id="email" type="email" {...register('email')} />

@@ -33,7 +33,7 @@ export default function LoginPage() {
         setError(null);
         try {
             const response = await api.post('/auth/login', data);
-            login(response.data.access_token);
+            login(response.data.accessToken);
         } catch (err: any) {
             setError(err.response?.data?.message || 'Login failed');
         } finally {

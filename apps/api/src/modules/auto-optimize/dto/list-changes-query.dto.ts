@@ -1,6 +1,6 @@
 import { IsOptional, IsIn } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ChangeStatus } from '@seo-audit/shared';
+import { ChangeStatus } from '../../../common/shared';
 
 export class ListChangesQueryDto {
     @ApiPropertyOptional({

@@ -76,6 +76,8 @@ model AuditPage {
   project        AuditProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
   url            String
   title          String?
+  metaDescription String? @db.Text
+  content        String? @db.Text
   mainKeyword    String?
   
   // Current metrics (last 30 days)

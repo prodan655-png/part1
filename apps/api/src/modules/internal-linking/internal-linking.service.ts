@@ -5,7 +5,7 @@ import {
     BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { ImportantTerm } from '@seo-audit/shared';
+import { ImportantTerm } from '../../common/shared';
 
 @Injectable()
 export class InternalLinkingService {

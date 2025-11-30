@@ -37,7 +37,10 @@ export default function SitesPage() {
     // Create site mutation
     const createSite = useMutation({
         mutationFn: async (domain: string) => {
-            return api.post('/sites', { domain });
+            return api.post('/sites', {
+                name: domain, // Use domain as name
+                domain
+            });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['sites'] });
