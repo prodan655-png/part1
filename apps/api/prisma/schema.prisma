@@ -1,0 +1,219 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sites          Site[]
+  gscConnections GSCConnection[]
+
+  @@map("users")
+}
+
+model Site {
+  id             String   @id @default(cuid())
+  ownerId        String
+  owner          User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name           String
+  domain         String   @unique
+  defaultCountry String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  auditProject AuditProject?
+
+  @@index([ownerId])
+  @@map("sites")
+}
+
+model GSCConnection {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     String   @default("google_search_console")
+  accessToken  String   @db.Text
+  refreshToken String   @db.Text
+  expiry       DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@map("gsc_connections")
+}
+
+model AuditProject {
+  id             String   @id @default(cuid())
+  siteId         String   @unique
+  site           Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  gscProperty    String
+  primaryCountry String   @default("us")
+  maxPages       Int      @default(100)
+  excludedPaths  String[] @default([])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  pages AuditPage[]
+
+  @@map("audit_projects")
+}
+
+model AuditPage {
+  id             String    @id @default(cuid())
+  projectId      String
+  project        AuditProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  url            String
+  title          String?
+  mainKeyword    String?
+  
+  // Current metrics (last 30 days)
+  avgPosition      Float?
+  clicks30d        Int?
+  impressions30d   Int?
+  ctr30d           Float?
+  
+  // Previous period (prev 30 days)
+  prevClicks30d      Int?
+  prevImpressions30d Int?
+  prevCtr30d         Float?
+  
+  // Content scoring
+  contentScore        Int?
+  recommendation      String?
+  recommendationScore Int?
+  
+  lastAnalysedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  snapshots          PageMetricsSnapshot[]
+  guidelines         ContentGuidelines?
+  autoChanges        AutoOptimizeChange[]
+  linkSuggestions    InternalLinkSuggestion[]
+  alerts             Alert[]
+
+  @@unique([projectId, url])
+  @@index([projectId])
+  @@index([mainKeyword])
+  @@index([contentScore])
+  @@index([recommendationScore])
+  @@map("audit_pages")
+}
+
+model PageMetricsSnapshot {
+  id          String    @id @default(cuid())
+  auditPageId String
+  auditPage   AuditPage @relation(fields: [auditPageId], references: [id], onDelete: Cascade)
+  
+  periodStart DateTime
+  periodEnd   DateTime
+  clicks      Int
+  impressions Int
+  ctr         Float
+  avgPosition Float
+  contentScore Int?
+  
+  createdAt DateTime @default(now())
+
+  @@index([auditPageId])
+  @@index([periodStart, periodEnd])
+  @@map("page_metrics_snapshots")
+}
+
+model ContentGuidelines {
+  id           String    @id @default(cuid())
+  auditPageId  String    @unique
+  auditPage    AuditPage @relation(fields: [auditPageId], references: [id], onDelete: Cascade)
+  
+  keyword      String
+  languageCode String    // ISO 639-1: en, uk, de, es, fr, etc.
+  country      String    // us, ua, de, etc.
+  
+  // Length recommendations from SERP analysis
+  minWords Int?
+  maxWords Int?
+  avgWords Int?
+  
+  // Headings structure from competitors
+  avgH1Count Int?
+  avgH2Count Int?
+  avgH3Count Int?
+  
+  // Important terms as JSON array
+  // Format: [{term, termNormalized, importance, minCount, maxCount, avgCount, percentagePresent}]
+  importantTerms Json @default("[]")
+  
+  // Number of competitor pages analyzed
+  competitorCount Int @default(0)
+  
+  lastUpdated DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([keyword, languageCode])
+  @@map("content_guidelines")
+}
+
+model AutoOptimizeChange {
+  id            String    @id @default(cuid())
+  auditPageId   String
+  auditPage     AuditPage @relation(fields: [auditPageId], references: [id], onDelete: Cascade)
+  
+  changeType    String // insert, replace, delete
+  location      String @db.Text // JSON string with position info
+  originalText  String? @db.Text
+  suggestedText String  @db.Text
+  status        String  @default("suggested") // suggested, applied, rejected
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([auditPageId])
+  @@index([status])
+  @@map("auto_optimize_changes")
+}
+
+model InternalLinkSuggestion {
+  id          String    @id @default(cuid())
+  auditPageId String
+  auditPage   AuditPage @relation(fields: [auditPageId], references: [id], onDelete: Cascade)
+  
+  sourceUrl  String
+  targetUrl  String
+  anchorText String
+  mode       String  @default("basic") // basic, semantic
+  status     String  @default("suggested") // suggested, applied, rejected
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([auditPageId])
+  @@index([status])
+  @@map("internal_link_suggestions")
+}
+
+model Alert {
+  id          String    @id @default(cuid())
+  auditPageId String
+  auditPage   AuditPage @relation(fields: [auditPageId], references: [id], onDelete: Cascade)
+  
+  type    String // drop, rise, stable
+  message String @db.Text
+  
+  createdAt DateTime @default(now())
+
+  @@index([auditPageId])
+  @@index([createdAt])
+  @@map("alerts")
+}
